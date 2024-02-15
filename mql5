@@ -1,0 +1,92 @@
+mql5
+#property copyright 'Forex Robot Easy Team'
+#property link      'forexroboteasy.com'
+
+//--- Input parameters
+input int lookbackBars = 20; // Number of bars to consider for support and resistance calculations
+input double sensitivity = 0.02; // Sensitivity to determine support and resistance levels
+
+//--- Global variables
+double supportLevel;
+double resistanceLevel;
+
+//+------------------------------------------------------------------+
+//| Custom indicator initialization function                         |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+   //--- Check the minimum number of bars
+   if (Bars < lookbackBars)
+   {
+      Print('Not enough bars for calculations');
+      return INIT_FAILED;
+   }
+   
+   //--- Calculate support and resistance levels
+   CalculateSupportResistance();
+   
+   return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+//| Custom indicator iteration function                              |
+//+------------------------------------------------------------------+
+int OnCalculate(const int rates_total,
+                const int prev_calculated,
+                const datetime &time[],
+                const double &open[],
+                const double &high[],
+                const double &low[],
+                const double &close[],
+                const long &tick_volume[],
+                const long &volume[],
+                const int &spread[])
+{
+   //--- Check for new support and resistance levels
+   if (NewLevelsDetected())
+   {
+      Alert('New support and resistance levels detected!');
+      DisplaySupportResistance();
+   }
+   
+   return(rates_total);
+}
+
+//+------------------------------------------------------------------+
+//| Calculate support and resistance levels                           |
+//+------------------------------------------------------------------+
+void CalculateSupportResistance()
+{
+   double highestHigh = High[ArrayMaximum(High, lookbackBars)];
+   double lowestLow = Low[ArrayMinimum(Low, lookbackBars)];
+   
+   supportLevel = lowestLow - sensitivity * (highestHigh - lowestLow);
+   resistanceLevel = highestHigh + sensitivity * (highestHigh - lowestLow);
+}
+
+//+------------------------------------------------------------------+
+//| Check for new support and resistance levels                       |
+//+------------------------------------------------------------------+
+bool NewLevelsDetected()
+{
+   double currentHighestHigh = High[ArrayMaximum(High, lookbackBars)];
+   double currentLowestLow = Low[ArrayMinimum(Low, lookbackBars)];
+   
+   double currentSupportLevel = currentLowestLow - sensitivity * (currentHighestHigh - currentLowestLow);
+   double currentResistanceLevel = currentHighestHigh + sensitivity * (currentHighestHigh - currentLowestLow);
+   
+   if (currentSupportLevel != supportLevel || currentResistanceLevel != resistanceLevel)
+      return(true);
+   
+   return(false);
+}
+
+//+------------------------------------------------------------------+
+//| Display support and resistance levels                             |
+//+------------------------------------------------------------------+
+void DisplaySupportResistance()
+{
+   Comment('Support Level: ', supportLevel, '\nResistance Level: ', resistanceLevel);
+}
+
+//+------------------------------------------------------------------+
